@@ -6,19 +6,33 @@ uniform mat4 uv_modelViewProjectionMatrix;
 uniform float radMax;
 uniform float timeMax;
 uniform float timeMin;
-uniform float eventTime;
 uniform sampler2D stateTexture;
 
-uniform float speed;
-uniform float pulseHeight;
-uniform float displacementHeight;
-uniform float turbulenceDetail;
+uniform float noisePulseHeight;
+uniform float noiseSpeed;
+uniform float noiseDisplacementHeight;
+uniform float noiseTurbulenceDetail;
 
 out float noise;
+out float displacement;
 out vec3 texcoord;
 
+const float PI = 3.141592653589793;
+
+// axis should be normalized
+mat3 rotationMatrix(vec3 axis, float angle)
+{
+	float s = sin(angle);
+	float c = cos(angle);
+	float oc = 1.0 - c;
+	
+	return mat3(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,
+				oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,
+				oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c);
+}
+
 //https://www.clicktorelease.com/blog/vertex-displacement-noise-3d-webgl-glsl-three-js/
-//https://shaderfrog.com/app/editor
+//https://shaderfrog.com/app/view/30
 
 vec3 mod289(vec3 x) {return x - floor(x * (1.0 / 289.0)) * 289.0;}
 vec4 mod289(vec4 x) {return x - floor(x * (1.0 / 289.0)) * 289.0;}
@@ -108,19 +122,34 @@ float turbulence( vec3 p ) {
 
 void main()
 {  
-
+	
 	float eventTime = texture(stateTexture, vec2(0.5)).r;
 	float rad = radMax*clamp(1. - (timeMax - eventTime)/(timeMax - timeMin), 0, 1.);
 
+	// get a random offset for rotation
+	float rX = turbulence( vec3( timeMin/10., 11., 111. ))*2.*PI;
+	float rY = turbulence( vec3( timeMin/10., 22., 222. ))*2.*PI;
+	float rZ = turbulence( vec3( timeMin/10., 33., 333. ))*2.*PI;
+	mat3 rotX = rotationMatrix(vec3(1,0,0), rX); 
+	mat3 rotY = rotationMatrix(vec3(0,1,0), rY); 
+	mat3 rotZ = rotationMatrix(vec3(0,0,1), rZ); 
+	
+	
 	// add time to the noise parameters so it's animated
-    noise = -0.8 * turbulence( turbulenceDetail * uv_normalAttrib + ( eventTime * 1.0 ) );
-    
-    float b = pulseHeight * cnoise( 0.05 * uv_vertexAttrib + vec3( 1.0 * eventTime ) );
-    float displacement = ( 0.0 - displacementHeight ) * noise + b;
-
-
+	//low frequency as a base (and offset?)
+    float n1 = -1.*turbulence( 0.1*uv_normalAttrib + ( (eventTime - timeMin)*noiseSpeed ) );
+	//additional user defined noise on top
+    float n2 = -0.8*turbulence( noiseTurbulenceDetail*uv_normalAttrib + ( (eventTime - timeMin)*noiseSpeed ) );
+    noise = n1 + n2;
+	
+	//pules?
+    float b = noisePulseHeight*cnoise( 0.05*uv_vertexAttrib + vec3((eventTime - timeMin)*noiseSpeed ) );
+	
+	//final displacement
+    displacement = ( 0.0 - noiseDisplacementHeight )*noise + b;
+	
 	vec3 newPosition = uv_vertexAttrib + uv_normalAttrib * displacement;
-	gl_Position = uv_modelViewProjectionMatrix * vec4( newPosition, 1.0/rad );
+	gl_Position = uv_modelViewProjectionMatrix * vec4( rotX*rotY*rotZ*newPosition, 1.0/rad );
 
 	//is this correct?
 	vec4 foo = uv_modelViewProjectionMatrix * vec4( newPosition, 1.0 );

@@ -6,8 +6,9 @@ uniform float SNAlpha;
 uniform float SNFadeFac;
 
 in vec2 texcoord;
-in vec3 color;
+in vec3 position;
 in float fTime;
+in float fTime1;
 in float fMaxT;
 
 out vec4 fragColor;
@@ -72,39 +73,28 @@ float noise(vec3 position, int octaves, float frequency, float persistence, int 
 
 void main()
 {
-	vec2 fromCenter = texcoord * 2 - vec2(1);
-    float dist = 2.*dot(fromCenter,fromCenter); //factor in front so that we don't reach the edge of the billboard
 
-	vec3 cm = texture(cmap ,vec2(clamp(dist*0.5 + 0.5,0.1,1),0.5)).rgb;
-    //fragColor = vec4(color, 1.);
-    fragColor = vec4(cm, 1.);
- 	fragColor.a *= exp(-0.5*dist/0.1) * uv_fade * SNAlpha;
-
-	float noiseTime = fTime*0.002;
-	if (fTime > fMaxT){
-		float fac = clamp(1./pow(1 + (fTime - fMaxT), 2.)*SNFadeFac, 0, 1.);
-		fragColor.a *= fac; //overall fade
-		//noiseTime /= SNFadeFac;
-	}
+	//fade factor (will be based on the light curve)
+	float SNfade = 1. - fTime1;
 	
 	//noise
-	vec3 pNorm = 10.*vec3(texcoord, noiseTime);
+	vec3 pNorm = 5.*position.xyz;//vec3(texcoord, noiseTime);
 
 	//fractal noise (can play with these)
-	float n1 = noise(pNorm, 7, 3., 0.7, 1); 
+	float n1 = noise(pNorm, 3, 3., 0.5, 1); 
 
 	// spots
-	float s = 0.1;
+	float s = 0.01; //smaller number means larger spots?
 	float frequency = 3;//
-	float threshold = 0.1;// limit number of spots
+	float threshold = 0.;// limit number of spots
 	float t1 = snoise(pNorm * frequency) - s;
 	float t2 = snoise((pNorm + 30.) * frequency) - s;
 	float ss = (max(t1 * t2, threshold) - threshold) ;
 
 	// Accumulate total noise
-	float n = clamp(n1 - ss + 0.7, 0, 1)*5. + 1.0;
-	fragColor *= n;
-	
+	float n = clamp(n1 - ss + 0.7, 0, 1);
+	fragColor = vec4(texture(cmap ,vec2(clamp(n,0.1,1),0.5)).rgb, 1.);
+	fragColor.a = n*uv_fade*SNAlpha*SNfade;
 	
 	//fragColor = vec4(cm,1);
 
