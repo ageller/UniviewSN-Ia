@@ -2,6 +2,7 @@ uniform float uv_fade;
 uniform float alpha;
 uniform sampler2D cmap;
 uniform float noiseDisplacementHeight;
+uniform float alphaPow;
 
 in float noise;
 in float displacement;
@@ -25,7 +26,8 @@ void main() {
 	//vec2 tPos = vec2(clamp(noise - r,0,0.99), 0.5);
 	vec4 color = texture2D( cmap, tPos );
 	
-	fragColor = vec4( color.rgb, alpha*uv_fade*pow(1. - d, 10) );
+	float dfac = pow(1. - d, alphaPow);
+	fragColor = vec4( color.rgb, alpha*uv_fade*dfac );
 	//fragColor = vec4( vec3(noise, -1.*displacement,0), alpha*uv_fade );
 
 

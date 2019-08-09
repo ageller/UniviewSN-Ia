@@ -2,6 +2,7 @@ in vec3 uv_vertexAttrib;
 in vec3 uv_normalAttrib;
 in vec2 uv_texCoordAttrib0;
 uniform mat4 uv_modelViewProjectionMatrix;
+uniform mat4 uv_modelViewMatrix;
 
 uniform float radMax;
 uniform float timeMax;
@@ -30,6 +31,7 @@ mat3 rotationMatrix(vec3 axis, float angle)
 				oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,
 				oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c);
 }
+
 
 //https://www.clicktorelease.com/blog/vertex-displacement-noise-3d-webgl-glsl-three-js/
 //https://shaderfrog.com/app/view/30
@@ -137,7 +139,7 @@ void main()
 	
 	// add time to the noise parameters so it's animated
 	//low frequency as a base (and offset?)
-    float n1 = -1.*turbulence( 0.1*uv_normalAttrib + ( (eventTime - timeMin)*noiseSpeed ) );
+    float n1 = -1.*turbulence( 0.1*uv_normalAttrib + timeMin/5.);
 	//additional user defined noise on top
     float n2 = -0.8*turbulence( noiseTurbulenceDetail*uv_normalAttrib + ( (eventTime - timeMin)*noiseSpeed ) );
     noise = n1 + n2;
@@ -151,8 +153,9 @@ void main()
 	vec3 newPosition = uv_vertexAttrib + uv_normalAttrib * displacement;
 	gl_Position = uv_modelViewProjectionMatrix * vec4( rotX*rotY*rotZ*newPosition, 1.0/rad );
 
-	//is this correct?
-	vec4 foo = uv_modelViewProjectionMatrix * vec4( newPosition, 1.0 );
+	//this seems to work as expected for x and y, but z seems to have some offset that I don't understand
+	//and all I really care about is the z dimension!
+	vec4 foo =  uv_modelViewMatrix * vec4(  rotX*rotY*rotZ*uv_vertexAttrib, 1.0 );
 	texcoord = foo.xyz;
 
 }
