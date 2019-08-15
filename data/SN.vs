@@ -16,7 +16,7 @@ float SNIaLum(float t, float A, float t0, float tb, float a1, float a2, float s)
 	float ar = 2.*(a1 + 1.);
 	float ad = a1 - a2;
 	float tfac = (t - t0)/tb;
-	return A * tfac**ar * (1. + tfac**(s*ad))**(-2./s);
+	return A * pow(tfac, ar) * pow(1. + pow(tfac, (s*ad)), -2./s);
 }
 
 void main()
