@@ -25,8 +25,10 @@ void main()
 	float eventTime = texture(stateTexture, vec2(0.5)).r;
 
 	//these values fit the data relatively well (see my notebook in M82 rawdata)
-	lum = SNIaLum(eventTime, 1., -2., 13., 0.1, -2.2, 0.6);
-	float rad = radScale*lum;
+	//lum = SNIaLum(eventTime, 1., -2., 13., 0.1, -2.2, 0.6);
+	lum = SNIaLum(eventTime, 1., -0., 15., 0.1, -2.2, 0.6);
+	float rad = radScale*0.001*eventTime;
+
 
 	texcoord = uv_texCoordAttrib0;
 	position = uv_vertexAttrib;
