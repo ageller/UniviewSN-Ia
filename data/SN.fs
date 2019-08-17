@@ -7,7 +7,7 @@ uniform float SNFadeFac;
 
 in vec2 texcoord;
 in vec3 position;
-in float rad;
+in float lum;
 
 out vec4 fragColor;
 
@@ -73,7 +73,7 @@ void main()
 {
 
 	//fade factor (the luminosity peaks at about 0.1)
-	float SNfade = rad*10;
+	float SNfade = clamp(pow(lum*10,2.),0,0.9);
 	
 	//noise
 	vec3 pNorm = 5.*position.xyz;//vec3(texcoord, noiseTime);
